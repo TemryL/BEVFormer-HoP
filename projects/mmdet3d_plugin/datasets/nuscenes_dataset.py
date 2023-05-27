@@ -22,11 +22,13 @@ class CustomNuScenesDataset(NuScenesDataset):
     This datset only add camera intrinsics and extrinsics to the results.
     """
 
-    def __init__(self, queue_length=4, bev_size=(200, 200), overlap_test=False, *args, **kwargs):
+    def __init__(self, queue_length=4, bev_size=(200, 200), overlap_test=False, train_with_hop=False, hop_pred_idx=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.queue_length = queue_length
         self.overlap_test = overlap_test
         self.bev_size = bev_size
+        self.train_with_hop = train_with_hop
+        self.hop_pred_idx = hop_pred_idx
         
     def prepare_train_data(self, index):
         """
@@ -80,8 +82,14 @@ class CustomNuScenesDataset(NuScenesDataset):
                 prev_angle = copy.deepcopy(tmp_angle)
         queue[-1]['img'] = DC(torch.stack(imgs_list), cpu_only=False, stack=True)
         queue[-1]['img_metas'] = DC(metas_map, cpu_only=True)
-        queue = queue[-1]
-        return queue
+        
+        if self.train_with_hop:
+            dict_out = copy.deepcopy(queue[-1])
+            dict_out['gt_bboxes_3d'] = queue[-(self.hop_pred_idx+1)]['gt_bboxes_3d']
+            dict_out['gt_labels_3d'] = queue[-(self.hop_pred_idx+1)]['gt_labels_3d']
+            return dict_out
+        else:
+            return queue[-1]
 
     def get_data_info(self, index):
         """Get data info according to the given index.
