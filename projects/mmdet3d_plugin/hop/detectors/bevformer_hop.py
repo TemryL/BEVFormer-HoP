@@ -16,6 +16,7 @@ import numpy as np
 import mmdet3d
 from projects.mmdet3d_plugin.models.utils.bricks import run_time
 from projects.mmdet3d_plugin.hop.modules import HoP
+from mmcv.runner import _load_checkpoint_with_prefix, load_state_dict
 
 
 @DETECTORS.register_module()
@@ -26,7 +27,9 @@ class BEVFormer_HoP(MVXTwoStageDetector):
     """
 
     def __init__(self,
-                 train_with_hop=True,
+                 pretrained_bevformer,
+                 freeze_bevformer=False,
+                 hop_ckpts=None,
                  prediction_index=None,
                  history_length=None,
                  use_grid_mask=False,
@@ -53,15 +56,58 @@ class BEVFormer_HoP(MVXTwoStageDetector):
                              img_backbone, pts_backbone, img_neck, pts_neck,
                              pts_bbox_head, img_roi_head, img_rpn_head,
                              train_cfg, test_cfg, pretrained)
-        self.train_with_hop = train_with_hop
-        if self.train_with_hop:
-            self.prediction_index = prediction_index
-            self.history_lenght = history_length
+              
+        # Initialize HoP framework:
+        self.pretrained_bevformer = pretrained_bevformer
+        self.freeze_bevformer = freeze_bevformer
+        self.hop_ckpts = hop_ckpts
+        self.prediction_index = prediction_index
+        self.history_lenght = history_length
+        
+        # Load pretrained weights:
+        state_dict = _load_checkpoint_with_prefix(prefix='img_backbone',
+                                                  filename=pretrained_bevformer)
+        load_state_dict(self.img_backbone, state_dict)
+        
+        state_dict = _load_checkpoint_with_prefix(prefix='img_neck',
+                                                  filename=pretrained_bevformer)
+        load_state_dict(self.img_neck, state_dict)
+        
+        state_dict = _load_checkpoint_with_prefix(prefix='pts_bbox_head',
+                                                  filename=pretrained_bevformer)
+        load_state_dict(self.pts_bbox_head, state_dict)
+        
+        
+        # Freeze img backbone and neck:
+        for param in self.img_backbone.parameters(): 
+            param.requires_grad = False
+        self.img_backbone.eval()
+        
+        for param in self.img_neck.parameters(): 
+            param.requires_grad = False
+        self.img_neck.eval()
+        
+        if self.freeze_bevformer:
+            for param in self.pts_bbox_head.parameters(): 
+                param.requires_grad = False
+            self.pts_bbox_head.eval()
+        
+        if self.hop_ckpts is not None:
             self.hop = HoP(prediction_index=1, 
-                           history_length=5, 
-                           embed_dims=self.pts_bbox_head.transformer.embed_dims, 
-                           bev_h=self.pts_bbox_head.bev_h, 
-                           bev_w=self.pts_bbox_head.bev_w
+                        history_length=5, 
+                        embed_dims=self.pts_bbox_head.transformer.embed_dims, 
+                        bev_h=self.pts_bbox_head.bev_h, 
+                        bev_w=self.pts_bbox_head.bev_w
+                        )
+            state_dict = _load_checkpoint_with_prefix(prefix='hop',
+                                                  filename=self.hop_ckpts)
+            load_state_dict(self.hop, state_dict)
+        else:
+            self.hop = HoP(prediction_index=1, 
+                        history_length=5, 
+                        embed_dims=self.pts_bbox_head.transformer.embed_dims, 
+                        bev_h=self.pts_bbox_head.bev_h, 
+                        bev_w=self.pts_bbox_head.bev_w
                         )
         
         self.grid_mask = GridMask(
@@ -121,34 +167,6 @@ class BEVFormer_HoP(MVXTwoStageDetector):
         img_feats = self.extract_img_feat(img, img_metas, len_queue=len_queue)
         
         return img_feats
-
-    def forward_pts_train(self,
-                          pts_feats,
-                          gt_bboxes_3d,
-                          gt_labels_3d,
-                          img_metas,
-                          gt_bboxes_ignore=None,
-                          prev_bev=None):
-        """Forward function'
-        Args:
-            pts_feats (list[torch.Tensor]): Features of point cloud branch
-            gt_bboxes_3d (list[:obj:`BaseInstance3DBoxes`]): Ground truth
-                boxes for each sample.
-            gt_labels_3d (list[torch.Tensor]): Ground truth labels for
-                boxes of each sampole
-            img_metas (list[dict]): Meta information of samples.
-            gt_bboxes_ignore (list[torch.Tensor], optional): Ground truth
-                boxes to be ignored. Defaults to None.
-            prev_bev (torch.Tensor, optional): BEV features of previous frame.
-        Returns:
-            dict: Losses of each branch.
-        """
-
-        outs = self.pts_bbox_head(
-            pts_feats, img_metas, prev_bev)
-        loss_inputs = [gt_bboxes_3d, gt_labels_3d, outs]
-        losses = self.pts_bbox_head.loss(*loss_inputs, img_metas=img_metas)
-        return losses
     
     def forward_hop(self, imgs_queue, img_metas_list, gt_bboxes_3d, gt_labels_3d):
         """Forward training function using Historical Object Prediction (HoP) framework
@@ -163,18 +181,29 @@ class BEVFormer_HoP(MVXTwoStageDetector):
         Returns:
             dict: Losses of each branch.
         """
+        if self.freeze_bevformer:
+            with torch.no_grad():
+                bs, len_queue, num_cams, C, H, W = imgs_queue.shape
+                imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
+                img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
                 
-        #print("\n \n ----------Forward HoP-------------")
-        bs, len_queue, num_cams, C, H, W = imgs_queue.shape
-        imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
-        img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
-        
-        bev_history = []
-        for i in range(len_queue):
-            img_metas = [each[i] for each in img_metas_list]
-            img_feats = [each_scale[:, i] for each_scale in img_feats_list]
-            prev_bev = self.pts_bbox_head(img_feats, img_metas, prev_bev=None, only_bev=True)
-            bev_history.append(prev_bev)
+                bev_history = []
+                for i in range(len_queue):
+                    img_metas = [each[i] for each in img_metas_list]
+                    img_feats = [each_scale[:, i] for each_scale in img_feats_list]
+                    prev_bev = self.pts_bbox_head(img_feats, img_metas, prev_bev=None, only_bev=True)
+                    bev_history.append(prev_bev)
+        else:
+            bs, len_queue, num_cams, C, H, W = imgs_queue.shape
+            imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
+            img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
+            
+            bev_history = []
+            for i in range(len_queue):
+                img_metas = [each[i] for each in img_metas_list]
+                img_feats = [each_scale[:, i] for each_scale in img_feats_list]
+                prev_bev = self.pts_bbox_head(img_feats, img_metas, prev_bev=None, only_bev=True)
+                bev_history.append(prev_bev)
         
         outs = self.hop(bev_history)
         
@@ -259,26 +288,8 @@ class BEVFormer_HoP(MVXTwoStageDetector):
         Returns:
             dict: Losses of different branches.
         """
-        if self.train_with_hop:
-            losses = dict()
-            losses_pts = self.forward_hop(img, img_metas, gt_bboxes_3d, gt_labels_3d)
-        else:
-            len_queue = img.size(1)
-            prev_img = img[:, :-1, ...]
-            img = img[:, -1, ...]
-
-            prev_img_metas = copy.deepcopy(img_metas)
-            prev_bev = self.obtain_history_bev(prev_img, prev_img_metas)
-            
-            img_metas = [each[len_queue-1] for each in img_metas]
-            if not img_metas[0]['prev_bev_exists']:
-                prev_bev = None
-            img_feats = self.extract_feat(img=img, img_metas=img_metas)
-            
-            losses = dict()
-            losses_pts = self.forward_pts_train(img_feats, gt_bboxes_3d,
-                                    gt_labels_3d, img_metas,
-                                    gt_bboxes_ignore, prev_bev)
+        losses = dict()
+        losses_pts = self.forward_hop(img, img_metas, gt_bboxes_3d, gt_labels_3d)
 
         losses.update(losses_pts)
         return losses

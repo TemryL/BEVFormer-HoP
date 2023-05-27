@@ -54,7 +54,9 @@ queue_length = 5 # each sequence contains `queue_length` frames.
 
 model = dict(
     type='BEVFormer_HoP',
-    train_with_hop=True,
+    pretrained_bevformer='ckpts/bevformer_tiny_epoch_24.pth',
+    freeze_bevformer=True,
+    hop_ckpts=None,
     prediction_index=1,
     history_length=queue_length,
     use_grid_mask=True,
