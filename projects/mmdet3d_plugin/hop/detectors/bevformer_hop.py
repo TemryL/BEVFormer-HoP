@@ -30,7 +30,7 @@ class BEVFormer_HoP(MVXTwoStageDetector):
                  pretrained_bevformer,
                  freeze_bevformer=False,
                  hop_ckpts=None,
-                 prediction_index=None,
+                 hop_pred_idx=None,
                  history_length=None,
                  use_grid_mask=False,
                  pts_voxel_layer=None,
@@ -61,8 +61,8 @@ class BEVFormer_HoP(MVXTwoStageDetector):
         self.pretrained_bevformer = pretrained_bevformer
         self.freeze_bevformer = freeze_bevformer
         self.hop_ckpts = hop_ckpts
-        self.prediction_index = prediction_index
-        self.history_lenght = history_length
+        self.hop_pred_idx = hop_pred_idx
+        self.history_length = history_length
         
         # Load pretrained weights:
         state_dict = _load_checkpoint_with_prefix(prefix='img_backbone',
@@ -93,8 +93,8 @@ class BEVFormer_HoP(MVXTwoStageDetector):
             self.pts_bbox_head.eval()
         
         if self.hop_ckpts is not None:
-            self.hop = HoP(prediction_index=1, 
-                        history_length=5, 
+            self.hop = HoP(hop_pred_idx=self.hop_pred_idx, 
+                        history_length=self.history_length, 
                         embed_dims=self.pts_bbox_head.transformer.embed_dims, 
                         bev_h=self.pts_bbox_head.bev_h, 
                         bev_w=self.pts_bbox_head.bev_w
@@ -103,8 +103,8 @@ class BEVFormer_HoP(MVXTwoStageDetector):
                                                   filename=self.hop_ckpts)
             load_state_dict(self.hop, state_dict)
         else:
-            self.hop = HoP(prediction_index=1, 
-                        history_length=5, 
+            self.hop = HoP(hop_pred_idx=self.hop_pred_idx, 
+                        history_length=self.history_length, 
                         embed_dims=self.pts_bbox_head.transformer.embed_dims, 
                         bev_h=self.pts_bbox_head.bev_h, 
                         bev_w=self.pts_bbox_head.bev_w
@@ -230,26 +230,26 @@ class BEVFormer_HoP(MVXTwoStageDetector):
         else:
             return self.forward_test(**kwargs)
     
-    def obtain_history_bev(self, imgs_queue, img_metas_list):
-        """Obtain history BEV features iteratively. To save GPU memory, gradients are not calculated.
-        """
-        self.eval()
+    # def obtain_history_bev(self, imgs_queue, img_metas_list):
+    #     """Obtain history BEV features iteratively. To save GPU memory, gradients are not calculated.
+    #     """
+    #     self.eval()
 
-        with torch.no_grad():
-            prev_bev = None
-            bs, len_queue, num_cams, C, H, W = imgs_queue.shape
-            imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
-            img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
-            for i in range(len_queue):
-                img_metas = [each[i] for each in img_metas_list]
-                if not img_metas[0]['prev_bev_exists']:
-                    prev_bev = None
-                # img_feats = self.extract_feat(img=img, img_metas=img_metas)
-                img_feats = [each_scale[:, i] for each_scale in img_feats_list]
-                prev_bev = self.pts_bbox_head(
-                    img_feats, img_metas, prev_bev, only_bev=True)
-            self.train()
-            return prev_bev
+    #     with torch.no_grad():
+    #         prev_bev = None
+    #         bs, len_queue, num_cams, C, H, W = imgs_queue.shape
+    #         imgs_queue = imgs_queue.reshape(bs*len_queue, num_cams, C, H, W)
+    #         img_feats_list = self.extract_feat(img=imgs_queue, len_queue=len_queue)
+    #         for i in range(len_queue):
+    #             img_metas = [each[i] for each in img_metas_list]
+    #             if not img_metas[0]['prev_bev_exists']:
+    #                 prev_bev = None
+    #             # img_feats = self.extract_feat(img=img, img_metas=img_metas)
+    #             img_feats = [each_scale[:, i] for each_scale in img_feats_list]
+    #             prev_bev = self.pts_bbox_head(
+    #                 img_feats, img_metas, prev_bev, only_bev=True)
+    #         self.train()
+    #         return prev_bev
 
     @auto_fp16(apply_to=('img', 'points'))
     def forward_train(self,

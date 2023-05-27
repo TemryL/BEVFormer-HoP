@@ -5,14 +5,14 @@ from .object_decoder import ObjectDecoder
 
 
 class HoP(nn.Module):
-    def __init__(self, prediction_index=1, history_length=5, embed_dims=256, bev_h=200, bev_w=200, num_classes=10):
+    def __init__(self, hop_pred_idx=1, history_length=5, embed_dims=256, bev_h=200, bev_w=200, num_classes=10):
         '''
         Args:
-            prediction_index (int): index of the prediction BEV feature in the input sequence
+            hop_pred_idx (int): index of the prediction BEV feature in the input sequence
             history_length (int): number of historical BEV features, including the current BEV feature
         '''
         super().__init__()
-        self.k = prediction_index
+        self.k = hop_pred_idx
         self.N = history_length
         self.embed_dims = embed_dims
         self.bev_h = bev_h
