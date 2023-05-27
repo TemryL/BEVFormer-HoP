@@ -4,6 +4,7 @@ import torch.nn as nn
 from mmcv.cnn import Linear
 from mmdet.models.utils.transformer import inverse_sigmoid
 from mmcv.cnn.bricks.transformer import build_transformer_layer_sequence
+from mmcv.runner import _load_checkpoint_with_prefix, load_state_dict
 
 
 def _get_clones(module, N):
@@ -23,6 +24,7 @@ class ObjectDecoder(nn.Module):
         self.code_size = 10
         self.pc_range = [-51.2, -51.2, -5.0, 51.2, 51.2, 3.0]
         
+        # Load pretrained object decoder and freeze layers
         self.decoder = build_transformer_layer_sequence(
             dict(
                 type='DetectionTransformerDecoder',
@@ -42,12 +44,19 @@ class ObjectDecoder(nn.Module):
                             num_levels=1),
                     ],
 
-                    feedforward_channels=embed_dims,
+                    feedforward_channels=2*embed_dims,
                     ffn_dropout=0.1,
                     operation_order=('self_attn', 'norm', 'cross_attn', 'norm',
                                         'ffn', 'norm'))
                 )
             )
+        state_dict = _load_checkpoint_with_prefix(prefix='pts_bbox_head.transformer.decoder',
+                                                  filename='ckpts/bevformer_r101_dcn_24ep.pth')
+        load_state_dict(self.decoder, state_dict)
+        for param in self.decoder.parameters(): 
+            param.requires_grad = False
+        self.decoder.eval()
+        
         self.query_embedding = nn.Embedding(self.num_query, self.embed_dims * 2)
         self.reference_points = nn.Linear(self.embed_dims, 3)
         
