@@ -1,6 +1,7 @@
 compressed/
 *.slurm
 out/
+renders/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
