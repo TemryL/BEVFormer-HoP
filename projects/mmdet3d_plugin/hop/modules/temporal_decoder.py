@@ -12,13 +12,6 @@ class TemporalDecoder(nn.Module):
         self.long_term_decoder = LongTermTemporalDecoder(embed_dims, bev_h, bev_w)
         self.features_fusion = nn.Conv2d(embed_dims + int(embed_dims/self.long_term_decoder.reduction), embed_dims, (3,3), padding='same')
 
-        # self.positional_encoding = build_positional_encoding(
-        #     dict(
-        #         type='SinePositionalEncoding',
-        #         num_feats=128,
-        #         normalize=True)
-        #     )
-
     def forward(self, B_adj, B_rem):
         '''Forward pass of the temporal decoder
         Args:
@@ -27,9 +20,6 @@ class TemporalDecoder(nn.Module):
         Returns:
             B_pred (Tensor): reconstructed BEV feature at time t-k with shape (bs, bev_h*bev_w, embed_dims)
         '''
-        # apply temporal positional encoding
-        # mask = torch.zeros((bs, self.bev_h, self.bev_w)).to(dtype)
-        # pos = self.positional_encoding(mask).to(dtype)
         
         B_short = self.short_term_decoder(B_adj)   # apply short-term temporal decoder
         B_long = self.long_term_decoder(B_rem)     # apply long-term temporal decoder
@@ -179,10 +169,10 @@ class LongTermTemporalDecoder(nn.Module):
 
 
 # if __name__ == '__main__':
-#     B = torch.randn([1, 50*50, 256])
+    # B = torch.randn([1, 50*50, 256])
     
-#     B_adj = [B, B]
-#     B_rem = [B, B, B, B, B]
+    # B_adj = [B, B]
+    # B_rem = [B, B, B, B, B]
     
-#     temporal_decoder = TemporalDecoder(256, 50, 50)
-#     B_pred = temporal_decoder(B_adj, B_rem)
+    # temporal_decoder = TemporalDecoder(256, 50, 50)
+    # B_pred = temporal_decoder(B_adj, B_rem)
