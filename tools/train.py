@@ -216,7 +216,10 @@ def main():
         cfg.model,
         train_cfg=cfg.get('train_cfg'),
         test_cfg=cfg.get('test_cfg'))
-    model.init_weights()
+    if type(model).__name__ == 'BEVFormer_HoP':
+        model.init_pretrained_weights()
+    else:
+        model.init_weights()
 
     logger.info(f'Model:\n{model}')
     datasets = [build_dataset(cfg.data.train)]
