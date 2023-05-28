@@ -29,19 +29,20 @@ class HoP(nn.Module):
         Returns:
             outs: output of the object decoder in same format than the BEVFormerHead
         ''' 
+        bsz = bev_history[0].size(0)
         dtype = bev_history[0].dtype
         device = bev_history[0].device
         
-        # Add temporal positional embeddings to BEV feature maps
-        for t, bev_features in enumerate(bev_history):
-            temporal_pos_embeds = self.temp_embedding.weight.to(dtype).to(device)
-            temporal_pos_embeds = temporal_pos_embeds.unsqueeze(1).expand(-1, self.bev_h*self.bev_w, -1)
-            bev_history[t] = bev_features + temporal_pos_embeds
-    
         bev_history.reverse()
         B_adj = [bev_history[self.k - 1], bev_history[self.k + 1]]  # adjacent BEV features at time t-k-1 and t-k+1
         bev_history.pop(self.k)                                     # remove BEV feature at time t-k
         B_rem = bev_history                                         # remaining BEV features
+        
+        # Add temporal positional embeddings to BEV feature maps
+        temporal_pos_embeds = self.temp_embedding.weight.to(dtype).to(device)
+        temporal_pos_embeds = temporal_pos_embeds.unsqueeze(1).repeat(1, self.bev_h*self.bev_w, 1)
+        for t, bev_features in enumerate(B_rem):
+            B_rem[t] = bev_features + temporal_pos_embeds[t,:,:]
         
         B_pred = self.temporal_decoder(B_adj, B_rem)       # reconstructed BEV feature at time t-k
         outs = self.object_decoder(B_pred)                 # 3D predictions
