@@ -71,7 +71,7 @@ yet not available and therefore the main contribution
 of this repo is the implementation of the proposed
 HoP method including it to the BEVFormer model.
 
-Our implementation of HoP can be found at `projects/mmdet3d_plugin/` and is as follow:
+Our implementation of HoP can be found at [projects/mmdet3d_plugin/hop](projects/mmdet3d_plugin/hop) and is as follow:
 
 ```
 ├── hop/
@@ -86,9 +86,9 @@ Our implementation of HoP can be found at `projects/mmdet3d_plugin/` and is as f
         ├── temporal_decoder.py/
 ```
 
-**HoP** framework is implemented as a `torch.nn.Module` in `hop.py`. The **TemporalEncoder** that combines the outputs of both **ShortTermTemporalDecoder** and **LongTermTemporalDecoder** is implemented in `temporal_decoder.py`. For the theoritical background behind the implementation, please refer to the original [paper](https://arxiv.org/pdf/2304.00967.pdf). We have chosen to reuse the object detection head (aka. DetectionTransformerDecoder) of the existing BEVFormer as the **ObjectDecoder** module in the **HoP** framework.
+**HoP** framework is implemented as a `torch.nn.Module` in [hop.py](projects/mmdet3d_plugin/hop/modules/hop.py). The **TemporalEncoder** that combines the outputs of both **ShortTermTemporalDecoder** and **LongTermTemporalDecoder** is implemented in [temporal_decoder.py](projects/mmdet3d_plugin/hop/modules/temporal_decoder.py). For the theoritical background behind the implementation, please refer to the original [paper](https://arxiv.org/pdf/2304.00967.pdf). We have chosen to reuse the object detection head (aka. DetectionTransformerDecoder) of the existing BEVFormer as the **ObjectDecoder** (implemented in [object_decoder.py](projects/mmdet3d_plugin/hop/modules/object_decoder.py)) module in the **HoP** framework.
 
-The **HoP** framework is then plugged to BEVFormer in `bevformer_hop.py` which implements the main class **BEVFormer_HoP**. Our contribution to the existing BEVFormer is the implementation of the forward pass using HoP, called `forward_hop()` and `forward_train()` as well as  custom initialization from existing pre-trained weights.
+The **HoP** framework is then plugged to BEVFormer in [bevformer_hop.py](projects/mmdet3d_plugin/hop/detectors/bevformer_hop.py) which implements the main class **BEVFormer_HoP**. Our contribution to the existing BEVFormer is the implementation of the forward pass using HoP, called `forward_hop()` and `forward_train()` as well as  custom initialization from existing pre-trained weights.
 Then **BEVFormer_HoP** is register to the detectors registry to comply with the existing repo of BEVFormer implemented using [OpenMMLab](https://github.com/open-mmlab).
 
 
