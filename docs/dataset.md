@@ -1,4 +1,15 @@
 
+# Dataset
+In order to train and evaluate the model,
+nuScenes, a large-scale autonomous driving dataset
+with 3D object annotations, will be used. It consists
+of 1000 scenes captured from four locations in
+Boston and Singapore, each of 20 seconds in length,
+covering different conditions. The images are captured from 6 surround-view cameras which provides
+a 360° view with a slight overlap between the neighboring cameras. As the dataset already provides
+annotated 3D objects with a category, attributes
+and 3D bounding box it can be used for training
+and testing. See more detail [HERE](https://www.nuscenes.org/nuscenes).
 
 ## NuScenes
 Download nuScenes V1.0 full dataset data and CAN bus expansion data [HERE](https://www.nuscenes.org/download).
@@ -21,30 +32,32 @@ python tools/prepare_data.py nuscenes --version v1.0 --root-path ./data/nuscenes
 ```
 
 Using the above code will generate `nuscenes_infos_temporal_{train,val}.pkl`.
-To save time, we have made `nuscenes_infos_temporal_{train,val}.pkl` available [HERE](https://www.nuscenes.org/download). To use them, place them according to the folder structure bellow and update the file with your `data_root_path` by running:
+To save time, we have made `nuscenes_infos_temporal_{train,val}.pkl` available [HERE](https://drive.switch.ch/index.php/s/dvADSm42HRxoi0f). To use them, place them according to the folder structure bellow and update the file with your `data_root_path` by running:
 
 ```
 python update_nuscenes_infos.py data/nuscenes/nuscenes_infos_temporal_train.pkl data_root_path
 python update_nuscenes_infos.py data/nuscenes/nuscenes_infos_temporal_val.pkl data_root_path
-
 ```
 
-**Folder structure**
+**Repo architecture**
 ```
 BEVFormer_HoP_gr3
 ├── projects/
 ├── tools/
 ├── configs/
 ├── ckpts/
-│   ├── r101_dcn_fcos3d_pretrain.pth
 ├── data/
 │   ├── can_bus/
 │   ├── nuscenes/
 │   │   ├── maps/
 │   │   ├── samples/
 │   │   ├── sweeps/
+│   │   ├── v1.0-mini/
 │   │   ├── v1.0-test/
 |   |   ├── v1.0-trainval/
 |   |   ├── nuscenes_infos_temporal_train.pkl
 |   |   ├── nuscenes_infos_temporal_val.pkl
 ```
+
+# Pretrained weights
+Pretrained weights (`ckpts/`) can be downloaded [HERE](https://drive.switch.ch/index.php/s/dvADSm42HRxoi0f) and added to the repo according to the repo architecture above.
