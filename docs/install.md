@@ -13,8 +13,9 @@
 
 
 # Step-by-step installation instructions
+If you are running on SCITAS, we have made available a pre-installed virtual environment at `/work/vita/datasets/bev/venvs/open-mmlab/`.
 
-Following https://mmdetection3d.readthedocs.io/en/latest/getting_started.html#installation
+Otherwise, follow:
 
 **a. Create a virtual environment and activate it.**
 ```shell
