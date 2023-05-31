@@ -45,7 +45,7 @@ architecture of BEVFormer is shown in bellow:
 
 This repository is based on the official implementation of BEVFormer available here: https://github.com/fundamentalvision/BEVFormer.
 
-Recall that in the context of our project, (i.e. building Tesla Autopilot system) we are only interested in extracing a bird-eye-view features map from surrounding cameras. From the figure above we therefore only want to extract BEV Bt that will be fed into downstream tasks (i.e. trajectories prediction and sim agents). However, to assess the quality of the BEV features map it is more convenient to tie it up with 3d detection tasks or segmentation tasks. Here, only 3d detection is used.
+Recall that in the context of our project, (i.e. building Tesla Autopilot system) we are only interested in extracing a bird-eye-view features map from surrounding cameras. From the figure above we therefore only want to extract BEV *$B_t$* that will be fed into downstream tasks (i.e. trajectories prediction and sim agents). However, to assess the quality of the BEV features map, it is more convenient to tie it up with 3d detection tasks or segmentation tasks. Here, only 3d detection is used.
 
 # Contribution
 > **Temporal Enhanced Training of Multi-view 3D Object Detector via Historical
@@ -104,13 +104,13 @@ Recall that the main hypothesis behing HoP framework is that enforcing the detec
 
 Given the time and computational ressources limitations in the context of this project, here are the procedure used to obtain the results given bellow:
 
-- `Step 1`: Only the tiny versions of BEVFormer, i.e. ResNet-50 instead of ResNet-101 as backbone and BEV feature map with shape 50x50 instead of 200x200, is considered. Existing pre-trained weights are loaded, see [ckpts](ckpts).
-- `Step 2`: To get a decent weight initialization of HoP framework, we first only train the temporal and object decoder of HoP. To do so, from *Figure 2*, the image backbone as well as the image-view transform from the existing BEVFormer is freezed. Then, given the historical BEV feature maps from timestep t, the HoP branch is trained to generate the BEV maps of timestamp (t-k) from its adjacent frames and utilize this feature to predict the object set at timestamp (t-k).
+- `Step 1`: Only the tiny versions of BEVFormer, i.e. ResNet-50 instead of ResNet-101 as backbone and BEV feature map with shape 50x50 instead of 200x200, is considered. Existing pre-trained weights are loaded, see [ckpts](https://drive.switch.ch/index.php/s/dvADSm42HRxoi0f?path=%2Fckpts).
+- `Step 2`: To get a decent weight initialization of HoP framework, we first only train the temporal and object decoder of HoP. To do so, from *Figure 2*, the image backbone as well as the image-view transform from the existing BEVFormer is freezed. Then, given the historical BEV feature maps from timestep *t*, the HoP branch is trained to generate the BEV maps of timestamp *(t-k)* from its adjacent frames and utilize this feature to predict the object set at timestamp *(t-k)*.
 - `Step 3`: From the weights of the HoP branch obtained after step 2, the image-view transform is unfreezed and BEVFormer is trained using both the prediction of the HoP branch and the prediction of the original BEV detection head. This is done by linear combination of the losses coming from both detection heads.
 
 Finally, since we are training the models from pre-trained weights, the learning rate schedule is modify in consequence. Warmup steps are removed and the learning rate is decreased by a factor of 20. 
 
-To reproduce `step 2` on the full dataset using 2 GPUs run:
+To reproduce `step 2` on the full dataset using 2 GPUs, run:
 ```
 ./tools/dist_train.sh ./projects/configs/bevformer_hop/bevformer_tiny_hop_only.py 2
 ```
@@ -123,7 +123,7 @@ To reproduce `step 3` on the full dataset, using 2 GPUs, with a weight of 0.25 f
 ```
 ./tools/dist_train.sh ./projects/configs/bevformer_hop/bevformer_tiny_hop_bi_loss_025.py 2
 ```
-We provide the logs of step 3 for HoP weight of 0.25 and 0.5. To visualize how the training went run:
+We provide the logs of step 3 for HoP weight of 0.25 and 0.5. To visualize how the training went, run:
 ```
 tensorboard --logdir=experiments/bevformer_tiny_hop_bi_loss/ --bind_all
 ```
@@ -143,7 +143,7 @@ Results of our experiments are shown bellow. For each experiments, the performan
 To assess the performances of our HoP framework implementation, we first established a baseline by training BEVFormer-tiny only (HoP weight loss of 0) on the *nuScenes-train-mini* from the pre-trained weights, over 10 epochs. Then we repeated the training under the same setup except that this time HoP framework is used with a weight of 0.5. A little increase in performances can be seen, tough not very relevant. Then, BEVFormer is trained for 2 epochs over the full dataset with a HoP weight of 0.5 and here the performances decrease. If we repeat the same training with a HoP weight of 0.25 the performances increase to 35% NDS.
 
 # Conclusion
-From our experiments we see that HoP framework can potentially increase the performances but the HoP weight is an important hyper-parameters. Also, we think that training the model with HoP from pre-trained weights is not optimal. Training the model from scratch with HoP should give better results as in the [paper](https://arxiv.org/pdf/2304.00967.pdf), but we could not afford that (training BEVFormer base, over 24 epochs with HoP would have taken around 16 days on SCITAS with 2 GPUs). 
+From our experiments, we see that HoP framework can potentially increase the performances but the HoP weight is an important hyper-parameters. Also, we think that training the model with HoP from pre-trained weights is not optimal. Training the model from scratch with HoP should give better results as in the [paper](https://arxiv.org/pdf/2304.00967.pdf), but we could not afford that (training BEVFormer base, over 24 epochs with HoP would have taken around 16 days on SCITAS with 2 GPUs). 
 
 Our hypothesis is that, since we have trained BEVFormer from pre-trained weights, we have a model that have already converged to a good solution. However, the solution that one would obtain by training BEVFormer with HoP from scratch is likely very different since the temporal informations is handled in a completly different way. Therefore, adding HoP to already pre-trained BEVFormer could lead to a decrease in performance first, and then to a convergence toward a solution that gives higher performances. This could explain the decrease in performance when training BEVFormer with HoP-weight set to 0.5 on 2 epochs. However, training only on 2 epochs is not enough to validate this hypothesis, and one should continue the training to assess its pertinence. 
 

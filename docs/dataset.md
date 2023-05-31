@@ -2,7 +2,7 @@
 # Dataset
 In order to train and evaluate the model,
 nuScenes, a large-scale autonomous driving dataset
-with 3D object annotations, will be used. It consists
+with 3D object annotations, is used. It consists
 of 1000 scenes captured from four locations in
 Boston and Singapore, each of 20 seconds in length,
 covering different conditions. The images are captured from 6 surround-view cameras which provides
