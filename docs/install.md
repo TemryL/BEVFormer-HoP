@@ -20,7 +20,7 @@ Otherwise, follow:
 **a. Create a virtual environment and activate it.**
 ```shell
 python -m venv --system-site-packages venvs/open-mmlab
-source /venvs/open-mmlab/bin/activate
+source venvs/open-mmlab/bin/activate
 ```
 **a.1. Upgrade pip.**
 ```shell
