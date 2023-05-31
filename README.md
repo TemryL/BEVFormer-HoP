@@ -45,7 +45,7 @@ architecture of BEVFormer is shown in bellow:
 
 This repository is based on the official implementation of BEVFormer available here: https://github.com/fundamentalvision/BEVFormer.
 
-Recall that in the context of our project, (i.e. building Tesla Autopilot system) we are only interested in extracing a bird-eye-view features map from surrounding cameras. From the figure above we therefore only want to extract BEV *$B_t$* that will be fed into downstream tasks (i.e. trajectories prediction and sim agents). However, to assess the quality of the BEV features map, it is more convenient to tie it up with 3d detection tasks or segmentation tasks. Here, only 3d detection is used.
+Recall that in the context of our project, (i.e. building Tesla Autopilot system) we are only interested in extracing a bird-eye-view features map from surrounding cameras. From the figure above we therefore only want to extract BEV *Bt* that will be fed into downstream tasks (i.e. trajectories prediction and sim agents). However, to assess the quality of the BEV features map, it is more convenient to tie it up with 3d detection tasks or segmentation tasks. Here, only 3d detection is used.
 
 # Contribution
 > **Temporal Enhanced Training of Multi-view 3D Object Detector via Historical
@@ -62,9 +62,9 @@ architecture of HoP is shown in bellow:
 *Figure 2: Historical Object Prediction (HoP) architecture*
 
 This method allows state-of-the-art architectures to perform even better by generating a pseudo BEV
-feature map of timestamp (t−k) from its adjacent
+feature map of timestamp *(t−k)* from its adjacent
 frames and utilize this feature to predict the object
-set at timestamp (t−k). HoP is performed only during
+set at timestamp *(t−k)*. HoP is performed only during
 training and thus, does not introduce extra overheads
 during inference. HoP is described as a plug-and-play approach and can be easily incorporated into
 state-of-the-art BEV detection frameworks including BEVFormer.
