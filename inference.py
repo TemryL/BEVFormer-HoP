@@ -55,7 +55,7 @@ def make_inference(model, model_cfg, img_cfg, img=None):
     back_left = img
     back = img
     imgs = torch.cat([back, back_right, back_left, front, front_left, front_right], dim=1)
-
+    #print(imgs.element_size() * imgs.nelement(), 'GBbbbbbbb')
     # Prepare meta data
     img_metas = dict()
     img_metas['can_bus'] = img_cfg.CAN_BUS
@@ -97,7 +97,10 @@ def render_inference(pts_bbox, model_cfg, score_tresh=0.15):
         9: 'Gray',
         10: 'Red'
     }
-    
+    class_names = [
+        'car', 'truck', 'construction_vehicle', 'bus', 'trailer', 'barrier',
+        'motorcycle', 'bicycle', 'pedestrian', 'traffic_cone'
+    ]
     scores_3d = pts_bbox['scores_3d']
     labels_3d = pts_bbox['labels_3d']
     boxes_3d = pts_bbox['boxes_3d']
@@ -128,9 +131,8 @@ def render_inference(pts_bbox, model_cfg, score_tresh=0.15):
 if __name__ == '__main__':
     
     model_cfg_file = 'projects/configs/bevformer/bevformer_base.py'
-    img_cfg_file = 'video_configs/test5_configs.py'
+    img_cfg_file = 'video_configs/test1_configs.py'
     checkpoint_file = 'ckpts/bevformer_r101_dcn_24ep.pth'
-    out_dir = 'render_test.jpg'
     score_tresh = 0.15
     
     # Load configs files
@@ -145,7 +147,7 @@ if __name__ == '__main__':
         cap = cv2.VideoCapture(img_cfg.path)
         nb_frames = cap.get(cv2.CAP_PROP_FRAME_COUNT)
         fps = cap.get(cv2.CAP_PROP_FPS)
-        result = cv2.VideoWriter('filename.mp4', 
+        result = cv2.VideoWriter(img_cfg.out_dir, 
                                 cv2.VideoWriter_fourcc(*'MP4V'),
                                 fps, (model_cfg.bev_w_, model_cfg.bev_h_))
         # mean_r = []
@@ -172,7 +174,7 @@ if __name__ == '__main__':
     else:
         bev_feature_map, pts_bbox = make_inference(model, model_cfg, img_cfg)
         img_bev = render_inference(pts_bbox, model_cfg, score_tresh=score_tresh)
-        cv2.imwrite(out_dir, img_bev)
+        cv2.imwrite(img_cfg.out_dir, img_bev)
 
     # B = np.array(mean_b).std()
     # G = np.array(mean_g).std()
