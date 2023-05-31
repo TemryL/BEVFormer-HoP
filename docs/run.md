@@ -5,9 +5,9 @@
 ./tools/dist_train.sh ./projects/configs/bevformer_hop/bevformer_tiny_hop_only.py 2
 ```
 
-## Train BEVFormer with HoP using 2 GPUs
+## Train BEVFormer with HoP (bi-loss weight 0.25) using 2 GPUs
 ```
-./tools/dist_train.sh ./projects/configs/bevformer_hop/bevformer_tiny_hop_bi_loss.py 2
+./tools/dist_train.sh ./projects/configs/bevformer_hop/bevformer_tiny_hop_bi_loss_025.py 2
 ```
 
 ## Test original BEVFormer tiny version using 2 GPUs
