@@ -146,3 +146,14 @@ To assess the performances of our HoP framework implementation, we first establi
 From our experiments, we see that HoP framework can potentially increase the performances but the HoP weight is an important hyper-parameter. Also, we think that training the model with HoP from pre-trained weights is not optimal. Training the model from scratch with HoP should give better results as in the [paper](https://arxiv.org/pdf/2304.00967.pdf), but we could not afford that (training BEVFormer base, over 24 epochs with HoP would have taken around 16 days on SCITAS with 2 GPUs). 
 
 Our hypothesis is that, since we have trained BEVFormer from pre-trained weights, we have a model that has already converged to a good solution. However, the solution that one would obtain by training BEVFormer with HoP from scratch is likely very different since the temporal information is handled in a completly different way. Therefore, adding HoP to already pre-trained BEVFormer could lead to a decrease in performance first, and then to a convergence toward a solution that gives higher performances. This could explain the decrease in performance when training BEVFormer with HoP-weight set to 0.5 on 2 epochs. However, training only on 2 epochs is not enough to validate this hypothesis, and one should continue the training to assess its pertinence.
+
+# Inference
+We also provide a script to make and render inference on video or single image using a trained model. Here is bellow an example of inference using bevformer base, a custom image config file and a score treshold of 0.15 for rendering:
+
+```
+python -m projects.inferences.inference ./projects/configs/bevformer/bevformer_base.py ./ckpts/bevformer_r101_dcn_24ep.pth ./projects/inferences/img_configs.py 0.15
+```
+
+To make inference on different video or images, simply change `path` and `out_dir` variables in your `img_configs` file.
+
+**Limitation**: BEVFormer has been trained to generate BEV feature map from 6 well calibrated surrounding cameras. Therefore the model is not accurate at all using only the front camera. We have tried to duplicate the front image to simulate the surrounding environment, or use random images, but both methods failed. However, the pipeline and the rendering for single image as well as mp4 video works. 
