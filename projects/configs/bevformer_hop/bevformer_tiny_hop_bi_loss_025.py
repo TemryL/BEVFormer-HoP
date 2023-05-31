@@ -57,8 +57,8 @@ model = dict(
     type='BEVFormer_HoP',
     pretrained_bevformer='ckpts/bevformer_tiny_epoch_24.pth',
     freeze_bevformer=False,
-    hop_ckpts='work_dirs/bevformer_tiny_hop/epoch_10.pth',
-    hop_weight=0.5,
+    hop_ckpts='ckpts/pretrained_hop_epoch_2.pth',
+    hop_weight=0.25,
     hop_pred_idx=_hop_pred_idx,
     history_length=queue_length,
     use_grid_mask=True,
@@ -254,22 +254,22 @@ data = dict(
 
 optimizer = dict(
     type='AdamW',
-    lr=1e-5,
+    lr=1e-7,
     paramwise_cfg=dict(
         custom_keys={
             'img_backbone': dict(lr_mult=0.1),
         }),
-    weight_decay=0.01)
+    weight_decay=1e-6)
 
 optimizer_config = dict(grad_clip=dict(max_norm=35, norm_type=2))
 # learning policy
 lr_config = dict(
     policy='CosineAnnealing',
     warmup='linear',
-    warmup_iters=10,
+    warmup_iters=500,
     warmup_ratio=1.0 / 3,
     min_lr_ratio=1e-3)
-total_epochs = 10
+total_epochs = 2
 evaluation = dict(interval=1, pipeline=test_pipeline)
 
 runner = dict(type='EpochBasedRunner', max_epochs=total_epochs)
