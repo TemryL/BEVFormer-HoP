@@ -1,9 +1,4 @@
-# Bird’s-Eye View from Monocular Cameras: Group 3
-
-- Group number: 3
-- Group Member:
-    1. Mery Tom, **SCIPER: 297217** (tom.mery@epfl.ch)
-    1. Charfeddine Ramy, **SCIPER: 295758** (ramy.charfeddine@epfl.ch)
+# Bird’s-Eye View from Monocular Cameras
 
 * [Abstract](#abstract)
 * [Methods](#methods)
