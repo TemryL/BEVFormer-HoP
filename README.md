@@ -17,7 +17,7 @@ model that can transform monocular camera images of the
 surrounding into a bird’s eye view map. The output of the
 model will be bird’s eye view map that can be used to train
 the object detection, tracking and predictions algorithms
-of the Tesla Autopilot system. Detailed introduction, litterature review and problem statement are available in `milestone1.pdf`.
+of the Tesla Autopilot system. Detailed introduction, litterature review and problem statement are available in `report.pdf`.
 
 
 # Methods
